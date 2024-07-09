@@ -1,128 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Random Picker</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        input[type="file"] {
-            margin-bottom: 20px;
-        }
-        .group {
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Random Picker</h1>
-    <input type="file" id="inputFile" accept=".xlsx">
+    <input type="file" id="inputFile" />
     <button onclick="processFile()">Process File</button>
     <div id="output"></div>
 
-    <script>
-        function processFile() {
-            const fileInput = document.getElementById('inputFile').files[0];
-            if (!fileInput) {
-                alert('Please select an Excel file first');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                createGroups(rows);
-            };
-            reader.readAsArrayBuffer(fileInput);
-        }
-
-        function createGroups(rows) {
-            rows.shift(); // Remove the header row
-
-            // Sort rows alphabetically by name
-            rows.sort((a, b) => a[0].localeCompare(b[0]));
-
-            const groups = Array.from({ length: 12 }, () => []);
-            const genderCounts = Array.from({ length: 12 }, () => ({ P: 0, L: 0 }));
-
-            // Distribute rows into groups
-            rows.forEach(([name, gender], index) => {
-                const groupIndex = index % 12;
-                groups[groupIndex].push({ name, gender });
-                genderCounts[groupIndex][gender]++;
-            });
-
-            // Balance groups asynchronously
-            balanceGroupsAsync(groups, genderCounts, () => {
-                displayGroups(groups);
-            });
-        }
-
-        function balanceGroupsAsync(groups, genderCounts, callback) {
-            const targetRatio = 1; // Equal P and L
-            let adjustments = true;
-
-            function balanceStep() {
-                adjustments = false;
-
-                for (let i = 0; i < 12; i++) {
-                    const total = genderCounts[i].P + genderCounts[i].L;
-                    const ratio = genderCounts[i].P / (genderCounts[i].L || 1);
-
-                    if (ratio > targetRatio + 0.1 || ratio < targetRatio - 0.1) {
-                        for (let j = 0; j < 12; j++) {
-                            if (i === j) continue;
-
-                            const swapGender = ratio > targetRatio ? 'P' : 'L';
-                            const oppositeGender = swapGender === 'P' ? 'L' : 'P';
-
-                            const swapIndex = groups[i].findIndex(person => person.gender === swapGender);
-                            const oppositeIndex = groups[j].findIndex(person => person.gender === oppositeGender);
-
-                            if (swapIndex > -1 && oppositeIndex > -1) {
-                                const temp = groups[i][swapIndex];
-                                groups[i][swapIndex] = groups[j][oppositeIndex];
-                                groups[j][oppositeIndex] = temp;
-
-                                genderCounts[i][swapGender]--;
-                                genderCounts[i][oppositeGender]++;
-                                genderCounts[j][swapGender]++;
-                                genderCounts[j][oppositeGender]--;
-
-                                adjustments = true;
-                            }
-                        }
-                    }
-                }
-
-                if (adjustments) {
-                    setTimeout(balanceStep, 0); // Yield control back to the browser
-                } else {
-                    callback(); // All balancing steps are complete
-                }
-            }
-
-            balanceStep();
-        }
-
-        function displayGroups(groups) {
-            const output = document.getElementById('output');
-            output.innerHTML = '';
-
-            groups.forEach((group, index) => {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'group';
-                groupDiv.innerHTML = `<h2>Group ${index + 1}</h2><ul>${group.map(person => `<li>${person.name} (${person.gender})</li>`).join('')}</ul>`;
-                output.appendChild(groupDiv);
-            });
-        }
-    </script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
